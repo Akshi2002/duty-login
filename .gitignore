@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+.venv/
+env/
+venv/
+
+# IDEs/editors
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment/config
+.env
+.env.local
+.env.production
+
+# SQLite databases
+*.sqlite
+instance/*.db*
+
+# Flask instance artifacts
+instance/*.sqlite*
+
+# Firebase credentials
+firebase-service-account.json
+firebase-service-account-*.json
+
+

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Sign In - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-sign-in-alt fa-3x text-success mb-3"></i>
+                    <h2 class="card-title">Sign In for Today</h2>
+                    <p class="text-muted">Record your arrival time for today</p>
+                </div>
+                
+                <div class="text-center">
+                    <p class="mb-4">
+                        <strong>Employee:</strong> {{ current_user.name }} ({{ current_user.employee_id }})<br>
+                        <strong>Department:</strong> {{ current_user.department }}
+                    </p>
+                    
+                    <form method="POST" id="signinForm">
+                        <div class="d-grid gap-2">
+                            <input type="hidden" name="latitude" id="latitude">
+                            <input type="hidden" name="longitude" id="longitude">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In Now
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('employee_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('signinForm').addEventListener('submit', function(e) {
+  const latInput = document.getElementById('latitude');
+  const lonInput = document.getElementById('longitude');
+  if (latInput.value && lonInput.value) return;
+  e.preventDefault();
+  if (!navigator.geolocation) { alert('Enable location to sign in.'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    latInput.value = pos.coords.latitude;
+    lonInput.value = pos.coords.longitude;
+    document.getElementById('signinForm').submit();
+  }, function(err) { alert('Location error: ' + (err?.message||'unknown')); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="mb-3">
+            <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+        </h2>
+        <p class="text-muted">Welcome back, {{ current_user.name }}!</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                <h4 class="card-title">{{ total_employees }}</h4>
+                <p class="card-text">Total Employees</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-sign-in-alt fa-2x text-success mb-2"></i>
+                <h4 class="card-title">{{ signed_in_today }}</h4>
+                <p class="card-text">Signed In Today</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-sign-out-alt fa-2x text-danger mb-2"></i>
+                <h4 class="card-title">{{ signed_out_today }}</h4>
+                <p class="card-text">Signed Out Today</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-day fa-2x text-info mb-2"></i>
+                <h4 class="card-title">{{ today_attendance|length }}</h4>
+                <p class="card-text">Today's Records</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Attendance -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-check me-2"></i>Today's Attendance
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if today_attendance %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee ID</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Sign In Time</th>
+                                <th>Sign Out Time</th>
+                                <th>Total Hours</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in today_attendance %}
+                            <tr>
+                                <td><strong>{{ attendance.employee_id }}</strong></td>
+                                <td>
+                                    {% for employee in employees %}
+                                        {% if employee.employee_id == attendance.employee_id %}
+                                            {{ employee.name }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for employee in employees %}
+                                        {% if employee.employee_id == attendance.employee_id %}
+                                            <span class="badge bg-secondary">{{ employee.department }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if attendance.sign_in_time %}
+                                        <span class="text-success">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ attendance.get_sign_in_datetime().strftime('%H:%M:%S') if attendance.get_sign_in_datetime() else 'Not signed in' }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Not signed in</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.sign_out_time %}
+                                        <span class="text-danger">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ attendance.get_sign_out_datetime().strftime('%H:%M:%S') if attendance.get_sign_out_datetime() else 'Not signed out' }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Not signed out</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.total_hours %}
+                                        <span class="badge bg-info">{{ "%.2f"|format(attendance.total_hours) }} hrs</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.sign_in_time and not attendance.sign_out_time %}
+                                        <span class="badge bg-success">Present</span>
+                                    {% elif attendance.sign_out_time %}
+                                        <span class="badge bg-secondary">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No attendance records for today</h5>
+                    <p class="text-muted">Employees will appear here once they sign in</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_employees') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-users me-2"></i>Manage Employees
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_attendance') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-calendar-check me-2"></i>View Attendance
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_attendance', date=datetime.now().strftime('%Y-%m-%d')) }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="fas fa-chart-bar me-2"></i>Today's Report
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger w-100 mb-2">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Edit Employee
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="employee_id" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>
+                                    Employee ID
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="employee_id" 
+                                       value="{{ employee.employee_id }}" 
+                                       readonly 
+                                       disabled>
+                                <div class="form-text">Employee ID cannot be changed</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Full Name *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="name" 
+                                       name="name" 
+                                       required 
+                                       value="{{ employee.name }}"
+                                       placeholder="e.g., John Doe">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    Email Address *
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       required 
+                                       value="{{ employee.email }}"
+                                       placeholder="e.g., john.doe@company.com">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-key me-1"></i>
+                                    Password (leave blank to keep unchanged)
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="password" 
+                                           name="password" 
+                                           placeholder="Enter new password">
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Admin can set a new password here. Existing password is hidden for security.</div>
+                              </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">
+                                    <i class="fas fa-building me-1"></i>
+                                    Department *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="department" 
+                                       name="department" 
+                                       required 
+                                       value="{{ employee.department }}"
+                                       placeholder="e.g., Information Technology, Sales, Marketing">
+                                <div class="form-text">Enter the department or designation for this employee</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Current Status
+                                </label>
+                                <div>
+                                    {% if employee.is_active %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inactive
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Employee Since
+                                </label>
+                                <div class="form-control-plaintext">
+                                    {{ employee.id }} (Auto-generated ID)
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_employees') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Back to Employees
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i>
+                                Update Employee
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Employee Information Card -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Employee Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Employee ID:</strong> {{ employee.employee_id }}</p>
+                            <p><strong>Name:</strong> {{ employee.name }}</p>
+                            <p><strong>Email:</strong> {{ employee.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Department:</strong> {{ employee.department }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if employee.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Database ID:</strong> {{ employee.id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const department = document.getElementById('department').value;
+    
+    if (!name || !email || !department) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+        return false;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        alert('Please enter a valid email address.');
+        return false;
+    }
+    
+    // Confirm update
+    if (!confirm('Are you sure you want to update this employee\'s information?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Show/hide password toggle
+const toggleBtn = document.getElementById('togglePassword');
+const pwdInput = document.getElementById('password');
+if (toggleBtn && pwdInput) {
+    toggleBtn.addEventListener('click', function () {
+        const type = pwdInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        pwdInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+}
+</script>
+{% endblock %} 

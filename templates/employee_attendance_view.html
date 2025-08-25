@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance Records - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>My Attendance Records
+                    </h2>
+                    <div>
+                        <span class="badge bg-primary fs-6">
+                            <i class="fas fa-user me-1"></i>{{ current_user.name }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Filter Section -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-body">
+                                <form method="GET" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="date" class="form-label">
+                                            <i class="fas fa-calendar me-2"></i>Filter by Date
+                                        </label>
+                                        <input type="date" name="date" id="date" class="form-control" 
+                                               value="{{ request.args.get('date', '') }}"
+                                               max="{{ moment().format('YYYY-MM-DD') if moment else '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search me-1"></i>Filter
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="setToday()">
+                                                <i class="fas fa-calendar-day me-1"></i>Today
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{{ url_for('employee_dashboard') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <script>
+                function setToday() {
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('date').value = today;
+                    document.querySelector('form').submit();
+                }
+                </script>
+                
+                <!-- Filter Status -->
+                {% if request.args.get('date') %}
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-filter me-2"></i>
+                    <strong>Filtered by date:</strong> {{ request.args.get('date') }}
+                    {% if attendance_records|length == 0 %}
+                    <span class="text-danger ms-2">
+                        <i class="fas fa-exclamation-circle me-1"></i>No records found for this date
+                    </span>
+                    {% else %}
+                    <span class="text-success ms-2">
+                        <i class="fas fa-check-circle me-1"></i>{{ attendance_records|length }} record(s) found
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Statistics Cards -->
+                {% if attendance_records|length > 0 %}
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                                <h4 class="mb-1">{{ stats.total_days }}</h4>
+                                <p class="mb-0">{% if request.args.get('date') %}Records{% else %}Total Days{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <h4 class="mb-1">{{ "%.1f"|format(stats.total_hours) }}</h4>
+                                <p class="mb-0">Total Hours</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-sign-in-alt fa-2x mb-2"></i>
+                                <h4 class="mb-1">{{ stats.avg_signin_time }}</h4>
+                                <p class="mb-0">Avg Sign In</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-sign-out-alt fa-2x mb-2"></i>
+                                <h4 class="mb-1">{{ stats.avg_signout_time }}</h4>
+                                <p class="mb-0">Avg Sign Out</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Attendance Table -->
+                {% if attendance_records|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Sign In Time</th>
+                                <th>Sign Out Time</th>
+                                <th>Total Hours</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>
+                                    <strong>{{ record.date }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ record.date }}</span>
+                                </td>
+                                <td>
+                                    {% if record.sign_in_time %}
+                                        <span class="text-success">
+                                            <i class="fas fa-sign-in-alt me-1"></i>
+                                            {{ record.get_sign_in_datetime().strftime('%H:%M:%S') if record.get_sign_in_datetime() else 'Not signed in' }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i class="fas fa-times me-1"></i>No record
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.sign_out_time %}
+                                        <span class="text-danger">
+                                            <i class="fas fa-sign-out-alt me-1"></i>
+                                            {{ record.get_sign_out_datetime().strftime('%H:%M:%S') if record.get_sign_out_datetime() else 'Not signed out' }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i class="fas fa-times me-1"></i>No record
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.total_hours %}
+                                        <span class="text-info">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ record.total_hours }} hours
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.sign_in_time and record.sign_out_time %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Complete
+                                        </span>
+                                    {% elif record.sign_in_time %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Signed In
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times me-1"></i>No Record
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.sign_in_time and record.sign_out_time %}
+                                        {% set hours = record.total_hours %}
+                                        {% if hours >= 8 %}
+                                            <span class="text-success">
+                                                <i class="fas fa-thumbs-up me-1"></i>Full Day
+                                            </span>
+                                        {% elif hours >= 4 %}
+                                            <span class="text-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Partial Day
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger">
+                                                <i class="fas fa-exclamation-circle me-1"></i>Short Day
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                
+                <!-- No Records Message -->
+                {% if attendance_records|length == 0 %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    {% if request.args.get('date') %}
+                    <h5 class="text-muted">No attendance records found for {{ request.args.get('date') }}</h5>
+                    <p class="text-muted">You didn't sign in on this date. Try selecting a different date or <a href="{{ url_for('employee_attendance') }}">view all records</a>.</p>
+                    {% else %}
+                    <h5 class="text-muted">No attendance records found</h5>
+                    <p class="text-muted">You haven't signed in yet. Start by signing in from your dashboard.</p>
+                    {% endif %}
+                    <div class="mt-3">
+                        {% if request.args.get('date') %}
+                        <a href="{{ url_for('employee_attendance') }}" class="btn btn-primary">
+                            <i class="fas fa-list me-1"></i>Show All Records
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('employee_dashboard') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Summary -->
+                {% if attendance_records and attendance_records|length > 0 %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-chart-bar me-2"></i>Summary
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Showing</small>
+                                        <div><strong>{{ attendance_records|length }} records</strong></div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Date Range</small>
+                                        {% if attendance_records|length > 0 %}
+                                        <div><strong>{{ attendance_records[-1].date }} - {{ attendance_records[0].date }}</strong></div>
+                                        {% else %}
+                                        <div><strong>No records</strong></div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Complete Days</small>
+                                        <div><strong>{{ stats.complete_days }}</strong></div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Average Hours</small>
+                                        <div><strong>{{ "%.1f"|format(stats.avg_hours_per_day) }} hours/day</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

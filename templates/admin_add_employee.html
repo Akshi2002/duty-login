@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Employee - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Add New Employee
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="employee_id" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>
+                                    Employee ID *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="employee_id" 
+                                       name="employee_id" 
+                                       required 
+                                       placeholder="e.g., EMP006"
+                                       pattern="[A-Za-z0-9]+"
+                                       title="Employee ID should contain only letters and numbers">
+                                <div class="form-text">Unique identifier for the employee</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Full Name *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="name" 
+                                       name="name" 
+                                       required 
+                                       placeholder="e.g., John Doe">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    Email Address *
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       required 
+                                       placeholder="e.g., john.doe@company.com">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">
+                                    <i class="fas fa-building me-1"></i>
+                                    Department *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="department" 
+                                       name="department" 
+                                       required 
+                                       placeholder="e.g., Information Technology, Sales, Marketing">
+                                <div class="form-text">Enter the department or designation for this employee</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>
+                                    Password *
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="password" 
+                                       name="password" 
+                                       required 
+                                       placeholder="Enter password">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_employees') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Back to Employees
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Add Employee
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Guidelines for Adding Employees
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-check text-success me-2"></i>Employee ID must be unique and contain only letters and numbers</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Email address must be unique and in valid format</li>
+                        <li><i class="fas fa-check text-success me-2"></i>All fields are required</li>
+                        <li><i class="fas fa-check text-success me-2"></i>New employees will be automatically set as active</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-generate employee ID suggestion
+document.getElementById('name').addEventListener('input', function() {
+    const name = this.value.trim();
+    const employeeIdField = document.getElementById('employee_id');
+    
+    if (name && !employeeIdField.value) {
+        // Generate a simple ID based on name
+        const initials = name.split(' ').map(word => word.charAt(0).toUpperCase()).join('');
+        const timestamp = Date.now().toString().slice(-3);
+        const suggestedId = `EMP${initials}${timestamp}`;
+        employeeIdField.placeholder = suggestedId;
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const employeeId = document.getElementById('employee_id').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const department = document.getElementById('department').value;
+    
+    if (!employeeId || !name || !email || !department) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+        return false;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        alert('Please enter a valid email address.');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

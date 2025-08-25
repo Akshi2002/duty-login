@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Login - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-lock fa-3x text-primary mb-3"></i>
+                    <h2 class="card-title">Employee Login</h2>
+                    <p class="text-muted">Enter your Employee ID and Password to access your dashboard</p>
+                </div>
+                
+                <form method="POST" id="loginForm">
+                    <div class="mb-3">
+                        <label for="employee_id" class="form-label">
+                            <i class="fas fa-id-card me-2"></i>Employee ID
+                        </label>
+                        <input type="text" class="form-control" id="employee_id" name="employee_id" 
+                               placeholder="Enter your Employee ID (e.g., EMP001)" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Enter your assigned Employee ID
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Enter your password" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Enter your assigned password
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('employee_portal') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Portal
+                    </a>
+                </div>
+                
+                <!-- Sample Credentials Info -->
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Sample Employee Credentials:</h6>
+                        <small>
+                            <strong>EMP001</strong> / <strong>emp001123</strong> (John Doe - IT)<br>
+                            <strong>EMP002</strong> / <strong>emp002123</strong> (Jane Smith - HR)<br>
+                            <strong>EMP003</strong> / <strong>emp003123</strong> (Mike Johnson - Sales)<br>
+                            <strong>EMP004</strong> / <strong>emp004123</strong> (Sarah Wilson - Marketing)<br>
+                            <strong>EMP005</strong> / <strong>emp005123</strong> (David Brown - Finance)
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Capture geolocation before form submit
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  const latInput = document.getElementById('latitude');
+  const lonInput = document.getElementById('longitude');
+  if (latInput.value && lonInput.value) {
+    return; // already set
+  }
+  e.preventDefault();
+  if (!navigator.geolocation) {
+    alert('Geolocation is required for login. Please enable location services.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    latInput.value = pos.coords.latitude;
+    lonInput.value = pos.coords.longitude;
+    document.getElementById('loginForm').submit();
+  }, function(err) {
+    alert('Could not get your location: ' + (err && err.message ? err.message : 'unknown error'));
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+});
+</script>
+{% endblock %} 

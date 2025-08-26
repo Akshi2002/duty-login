@@ -45,7 +45,7 @@ def main():
     app.run(
         host='0.0.0.0',
         port=port,
-        debug=False  # Set to False for production
+        debug=True
     )
 
 if __name__ == '__main__':

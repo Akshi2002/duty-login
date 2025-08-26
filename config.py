@@ -15,10 +15,10 @@ class Config:
     
     # Public IP configuration removed (no longer used)
     
-    # Admin Configuration - Use environment variables for production
-    DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME', 'admin')
-    DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123')
-    DEFAULT_ADMIN_NAME = os.environ.get('DEFAULT_ADMIN_NAME', 'System Administrator')
+    # Admin Configuration
+    DEFAULT_ADMIN_USERNAME = 'admin'
+    DEFAULT_ADMIN_PASSWORD = 'admin123'
+    DEFAULT_ADMIN_NAME = 'System Administrator'
     
     # Sample Employees Configuration
     SAMPLE_EMPLOYEES = [
@@ -62,7 +62,7 @@ class Config:
     # Application Settings
     APP_NAME = 'Employee Attendance System'
     APP_VERSION = '1.0.0'
-    DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+    DEBUG = True
     
     # Time Settings
     WORKING_HOURS_START = 10 

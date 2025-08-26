@@ -74,10 +74,7 @@ def index():
     """Main page - redirects to appropriate login"""
     return render_template('index.html')
 
-@app.route('/health')
-def health_check():
-    """Health check endpoint for Railway"""
-    return jsonify({"status": "healthy", "message": "Flask app is running"}), 200
+
 
 @app.route('/employee')
 def employee_portal():

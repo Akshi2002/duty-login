@@ -22,6 +22,10 @@ def main():
 
     # Get port from environment or use default
     port = int(os.environ.get('PORT', 5000))
+    
+    # For Railway, we need to use the PORT environment variable
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        port = int(os.environ.get('PORT', 5000))
 
     print(f"\nStarting server on http://localhost:{port}")
     print("Press Ctrl+C to stop the server")

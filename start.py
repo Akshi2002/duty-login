@@ -18,6 +18,15 @@ try:
     from app import app
     print("✅ App imported successfully")
     
+    # Test Firebase connection
+    try:
+        from railway_firebase import setup_firebase_for_railway
+        setup_firebase_for_railway()
+        print("✅ Firebase setup completed")
+    except Exception as e:
+        print(f"⚠️ Firebase setup warning: {e}")
+        print("🔧 Continuing without Firebase...")
+    
     port = int(os.environ.get('PORT', 5000))
     print(f"🌐 Starting server on port {port}")
     

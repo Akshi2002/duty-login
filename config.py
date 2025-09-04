@@ -71,7 +71,7 @@ class Config:
     # Application Settings
     APP_NAME = 'Employee Attendance System'
     APP_VERSION = '1.0.0'
-    DEBUG = True
+    DEBUG = os.environ.get('FLASK_ENV') != 'production'
     
     # Time Settings
     WORKING_HOURS_START = 10 

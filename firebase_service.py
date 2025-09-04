@@ -19,7 +19,20 @@ class FirebaseService:
         except ValueError:
             # Firebase not initialized, so initialize it
             
-            # Option 1: Use service account key file (recommended for production)
+            # Option 1: Use environment variable (for production deployment)
+            firebase_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
+            if firebase_json:
+                import json
+                try:
+                    service_account_info = json.loads(firebase_json)
+                    cred = credentials.Certificate(service_account_info)
+                    firebase_admin.initialize_app(cred)
+                    print("✅ Firebase initialized with environment variable")
+                except Exception as e:
+                    print(f"❌ Failed to initialize Firebase with environment variable: {e}")
+                    return
+            
+            # Option 2: Use service account key file (for local development)
             service_account_path = os.path.join(os.path.dirname(__file__), 'firebase-service-account.json')
             
             if os.path.exists(service_account_path):

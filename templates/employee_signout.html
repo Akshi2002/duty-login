@@ -19,6 +19,29 @@
                         <strong>Department:</strong> {{ current_user.department }}
                     </p>
                     
+                    {% if show_timesheet_requirement %}
+                    <!-- Timesheet Requirement Notice -->
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Timesheet Required!</strong><br>
+                        You must submit your daily timesheet before you can sign out.
+                    </div>
+                    
+                    <!-- Submit Timesheet Button -->
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{{ url_for('employee_timesheet') }}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-clipboard-list me-2"></i>Submit Timesheet First
+                        </a>
+                    </div>
+                    
+                    <!-- Disabled Sign Out Button -->
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-danger btn-lg" disabled>
+                            <i class="fas fa-lock me-2"></i>Sign Out (Timesheet Required)
+                        </button>
+                    </div>
+                    {% else %}
+                    <!-- Normal Sign Out Form -->
                     <form method="POST" id="signoutForm">
                         <div class="d-grid gap-2">
                             <input type="hidden" name="latitude" id="latitude">
@@ -28,6 +51,7 @@
                             </button>
                         </div>
                     </form>
+                    {% endif %}
                 </div>
                 
                 <div class="text-center mt-4">

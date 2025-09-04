@@ -7,7 +7,7 @@ from config import Config
 import math
 
 # Firebase imports
-from firebase_models import FirebaseEmployee, FirebaseAdmin, FirebaseAttendance
+from firebase_models import FirebaseEmployee, FirebaseAdmin, FirebaseAttendance, FirebaseTimesheet
 from firebase_service import get_firebase_service
 
 app = Flask(__name__)
@@ -20,6 +20,8 @@ login_manager.login_view = 'admin_login'
 
 # Initialize Firebase service
 firebase_service = get_firebase_service()
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -217,6 +219,20 @@ def employee_signout():
         flash('You have already signed out today!', 'error')
         return redirect(url_for('employee_dashboard'))
 
+    # Check if timesheet is required for sign-out
+    if Config.REQUIRE_TIMESHEET_FOR_SIGNOUT:
+        existing_timesheet = FirebaseTimesheet.find_by_employee_and_date(employee_id, today)
+        if not existing_timesheet:
+            flash('You must submit your daily timesheet before signing out.', 'error')
+            return render_template(
+                'employee_signout.html',
+                office_locations=Config.OFFICE_LOCATIONS,
+                office_lat=Config.OFFICE_LATITUDE,
+                office_lng=Config.OFFICE_LONGITUDE,
+                office_radius=Config.OFFICE_RADIUS_METERS,
+                show_timesheet_requirement=True
+            )
+
     # Calculate working hours
     sign_out_time = datetime.now()
     attendance.sign_out_time = sign_out_time
@@ -392,6 +408,69 @@ def employee_change_password():
             return render_template('employee_change_password.html')
 
     return render_template('employee_change_password.html')
+
+@app.route('/employee/timesheet', methods=['GET', 'POST'])
+@login_required
+def employee_timesheet():
+    """Employee timesheet - daily report submission"""
+    if not isinstance(current_user, FirebaseEmployee):
+        return redirect(url_for('employee_portal'))
+    
+    today = datetime.now().date()
+    today_date = today.strftime('%Y-%m-%d')
+    
+    # Get existing timesheet for today
+    existing_timesheet = FirebaseTimesheet.find_by_employee_and_date(current_user.employee_id, today)
+    
+    if request.method == 'POST':
+        # Get form data
+        daily_report = request.form.get('daily_report', '').strip()
+        
+        # Validate required fields
+        if not daily_report:
+            flash('Daily report is required!', 'error')
+            return render_template('employee_timesheet.html',
+                                 today_date=today_date,
+                                 existing_timesheet=existing_timesheet,
+                                 recent_timesheets=[])
+        
+        # Create or update timesheet
+        if existing_timesheet:
+            # Update existing timesheet
+            existing_timesheet.tasks_completed = daily_report
+            existing_timesheet.challenges_faced = ''
+            existing_timesheet.achievements = ''
+            existing_timesheet.tomorrow_plans = ''
+            existing_timesheet.additional_notes = ''
+            timesheet = existing_timesheet
+        else:
+            # Create new timesheet
+            timesheet = FirebaseTimesheet({
+                'employee_id': current_user.employee_id,
+                'date': today_date,
+                'tasks_completed': daily_report,
+                'challenges_faced': '',
+                'achievements': '',
+                'tomorrow_plans': '',
+                'additional_notes': ''
+            })
+        
+        # Save timesheet
+        if timesheet.save():
+            action = "updated" if existing_timesheet else "submitted"
+            flash(f'Your timesheet has been {action} successfully!', 'success')
+            return redirect(url_for('employee_dashboard'))
+        else:
+            flash('Error saving timesheet. Please try again.', 'error')
+    
+    # Get recent timesheets for display (excluding today's)
+    recent_timesheets = FirebaseTimesheet.get_by_employee(current_user.employee_id, limit=10)
+    recent_timesheets = [ts for ts in recent_timesheets if ts.date != today_date][:5]  # Show last 5 excluding today
+    
+    return render_template('employee_timesheet.html',
+                         today_date=today_date,
+                         existing_timesheet=existing_timesheet,
+                         recent_timesheets=recent_timesheets)
 
 # Admin routes
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -588,8 +667,11 @@ def admin_attendance():
     if not isinstance(current_user, FirebaseAdmin):
         return redirect(url_for('admin_login'))
     
-    # Get date filter
+    # Get filters
     date_filter = request.args.get('date')
+    status_filter = request.args.get('status')
+    
+    # Get base attendance records
     if date_filter:
         try:
             filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
@@ -599,8 +681,66 @@ def admin_attendance():
     else:
         attendance_records = FirebaseAttendance.get_recent(limit=100)
     
+    # Apply status filter
+    if status_filter == 'incomplete_sessions':
+        # Filter for employees who signed in but didn't sign out
+        attendance_records = [record for record in attendance_records 
+                            if record.sign_in_time and not record.sign_out_time]
+    elif status_filter == 'completed_sessions':
+        # Filter for employees who completed their day
+        attendance_records = [record for record in attendance_records 
+                            if record.sign_in_time and record.sign_out_time]
+    
     employees = FirebaseEmployee.get_all()
-    return render_template('admin_attendance.html', attendance_records=attendance_records, employees=employees)
+    return render_template('admin_attendance.html', 
+                         attendance_records=attendance_records, 
+                         employees=employees,
+                         status_filter=status_filter)
+
+@app.route('/admin/timesheets')
+@login_required
+def admin_timesheets():
+    """Admin timesheet records"""
+    if not isinstance(current_user, FirebaseAdmin):
+        return redirect(url_for('admin_login'))
+    
+    # Get filters
+    date_filter = request.args.get('date')
+    employee_filter = request.args.get('employee_id')
+    
+    # Get timesheet records based on filters
+    if date_filter and employee_filter:
+        # Filter by both date and employee
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            timesheet_records = [FirebaseTimesheet.find_by_employee_and_date(employee_filter, filter_date)]
+            timesheet_records = [record for record in timesheet_records if record is not None]
+        except ValueError:
+            timesheet_records = []
+    elif date_filter:
+        # Filter by date only
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            timesheet_records = FirebaseTimesheet.get_by_date(filter_date)
+        except ValueError:
+            timesheet_records = FirebaseTimesheet.get_recent(limit=100)
+    elif employee_filter:
+        # Filter by employee only
+        timesheet_records = FirebaseTimesheet.get_by_employee(employee_filter, limit=100)
+    else:
+        # No filters - get recent records
+        timesheet_records = FirebaseTimesheet.get_recent(limit=100)
+    
+    # Get all employees for dropdown and employee lookup
+    employees = FirebaseEmployee.get_all()
+    employees_dict = {emp.employee_id: emp for emp in employees}
+    
+    return render_template('admin_timesheets.html', 
+                         timesheet_records=timesheet_records, 
+                         employees=employees,
+                         employees_dict=employees_dict)
+
+
 
 @app.route('/admin/logout')
 @login_required

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Time Sheets - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Employee Time Sheets
+                    </h2>
+                    <div>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-filter me-2"></i>Filter Time Sheets
+                                </h6>
+                                <form method="GET" action="{{ url_for('admin_timesheets') }}" class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="date" class="form-label">Date</label>
+                                        <input type="date" class="form-control" id="date" name="date" 
+                                               value="{{ request.args.get('date', '') }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="employee_id" class="form-label">Employee</label>
+                                        <select class="form-select" id="employee_id" name="employee_id">
+                                            <option value="">All Employees</option>
+                                            {% for employee in employees %}
+                                            <option value="{{ employee.employee_id }}" 
+                                                    {% if request.args.get('employee_id') == employee.employee_id %}selected{% endif %}>
+                                                {{ employee.employee_id }} - {{ employee.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">
+                                            <i class="fas fa-search me-1"></i>Filter
+                                        </button>
+                                        <a href="{{ url_for('admin_timesheets') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-refresh me-1"></i>Clear
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Sheets Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Report Preview</th>
+                                <th>Submitted At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for timesheet in timesheet_records %}
+                            {% set employee = employees_dict.get(timesheet.employee_id) %}
+                            <tr>
+                                <td>
+                                    <strong>{{ timesheet.date }}</strong>
+                                </td>
+                                <td>
+                                    {% if employee %}
+                                        <div>
+                                            <strong>{{ employee.name }}</strong>
+                                            <br><small class="text-muted">{{ employee.employee_id }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">{{ timesheet.employee_id }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if employee %}
+                                        <span class="badge bg-secondary">{{ employee.department }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ timesheet.tasks_completed[:60] }}{% if timesheet.tasks_completed|length > 60 %}...{% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if timesheet.submitted_at %}
+                                        {{ timesheet.submitted_at[:19] }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                            data-bs-toggle="modal" data-bs-target="#timesheetModal{{ loop.index }}">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not timesheet_records %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="fas fa-clipboard-list fa-3x mb-3"></i><br>
+                                    <h5>No Time Sheets Found</h5>
+                                    <p>No time sheet records match your current filters.</p>
+                                    {% if request.args.get('date') or request.args.get('employee_id') %}
+                                    <a href="{{ url_for('admin_timesheets') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-refresh me-1"></i>View All Records
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination info -->
+                {% if timesheet_records|length >= 100 %}
+                <div class="text-center mt-3">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Showing latest 100 records. Use filters to narrow down results.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for viewing timesheet details -->
+{% for timesheet in timesheet_records %}
+{% set employee = employees_dict.get(timesheet.employee_id) %}
+<div class="modal fade" id="timesheetModal{{ loop.index }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-clipboard-list me-2"></i>Time Sheet Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Employee and Date Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Employee Information</h6>
+                                {% if employee %}
+                                <p class="mb-1"><strong>Name:</strong> {{ employee.name }}</p>
+                                <p class="mb-1"><strong>ID:</strong> {{ employee.employee_id }}</p>
+                                <p class="mb-1"><strong>Email:</strong> {{ employee.email }}</p>
+                                <p class="mb-0"><strong>Department:</strong> {{ employee.department }}</p>
+                                {% else %}
+                                <p class="mb-0"><strong>Employee ID:</strong> {{ timesheet.employee_id }}</p>
+                                <p class="text-muted small">Employee details not available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Submission Details</h6>
+                                <p class="mb-1"><strong>Date:</strong> {{ timesheet.date }}</p>
+                                <p class="mb-0"><strong>Submitted:</strong> 
+                                    {% if timesheet.submitted_at %}
+                                        {{ timesheet.submitted_at[:19] }}
+                                    {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timesheet Content -->
+                <div class="row">
+                    <div class="col-12">
+                        <h6><i class="fas fa-clipboard-list me-2"></i>Daily Report</h6>
+                        <div class="border p-3 mb-3 bg-light rounded">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ timesheet.tasks_completed or 'No report submitted' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

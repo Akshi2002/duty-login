@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Time Sheet - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Daily Time Sheet
+                    </h2>
+                    <div>
+                        <a href="{{ url_for('employee_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Date and Employee Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-calendar-day me-2"></i>Report Details
+                                </h6>
+                                <p class="mb-1"><strong>Date:</strong> {{ today_date }}</p>
+                                <p class="mb-1"><strong>Employee:</strong> {{ current_user.name }}</p>
+                                <p class="mb-0"><strong>ID:</strong> {{ current_user.employee_id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-info-circle me-2"></i>Submission Status
+                                </h6>
+                                {% if existing_timesheet %}
+                                    <p class="mb-1">
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Already Submitted
+                                        </span>
+                                    </p>
+                                    <p class="mb-0 small text-muted">
+                                        Submitted at: {{ existing_timesheet.submitted_at[:19] if existing_timesheet.submitted_at else 'Unknown' }}
+                                    </p>
+                                {% else %}
+                                    <p class="mb-0">
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Pending Submission
+                                        </span>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timesheet Form -->
+                <form method="POST" action="{{ url_for('employee_timesheet') }}">
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="fas fa-edit me-2"></i>Daily Report
+                                {% if existing_timesheet %}
+                                    <small class="text-muted">(Editing existing report)</small>
+                                {% endif %}
+                            </h5>
+                            
+                            <!-- Daily Report -->
+                            <div class="mb-4">
+                                <label for="daily_report" class="form-label">
+                                    <i class="fas fa-clipboard-list me-1"></i>Daily Report <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" id="daily_report" name="daily_report" rows="8" 
+                                         placeholder="Write your daily report here..." required>{{ existing_timesheet.tasks_completed if existing_timesheet else '' }}</textarea>
+                                <div class="form-text">Describe your work activities, achievements, challenges, and any other relevant information for today.</div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-primary btn-lg me-md-2">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if existing_timesheet %}Update Report{% else %}Submit Report{% endif %}
+                                </button>
+                                <a href="{{ url_for('employee_dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- View Previous Timesheets -->
+                {% if recent_timesheets %}
+                <hr class="my-5">
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-history me-2"></i>Recent Time Sheets
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Submitted At</th>
+                                        <th>Report Preview</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for timesheet in recent_timesheets %}
+                                    <tr>
+                                        <td>{{ timesheet.date }}</td>
+                                        <td>
+                                            {% if timesheet.submitted_at %}
+                                                {{ timesheet.submitted_at[:19] }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ timesheet.tasks_completed[:50] }}{% if timesheet.tasks_completed|length > 50 %}...{% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#timesheetModal{{ loop.index }}">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modals for viewing previous timesheets -->
+                {% for timesheet in recent_timesheets %}
+                <div class="modal fade" id="timesheetModal{{ loop.index }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-clipboard-list me-2"></i>Time Sheet - {{ timesheet.date }}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6><i class="fas fa-clipboard-list me-1"></i>Daily Report:</h6>
+                                        <div class="border p-3 bg-light rounded">
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ timesheet.tasks_completed or 'No report submitted' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

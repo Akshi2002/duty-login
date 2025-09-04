@@ -311,6 +311,113 @@ class FirebaseService:
         except Exception as e:
             print(f"❌ Error updating attendance: {e}")
             return False
+    
+    # Timesheet CRUD Operations
+    def create_timesheet(self, timesheet_data: Dict[str, Any]) -> str:
+        """Create timesheet record"""
+        try:
+            doc_ref = self.db.collection('timesheets').document()
+            timesheet_data['created_at'] = firestore.SERVER_TIMESTAMP
+            timesheet_data['updated_at'] = firestore.SERVER_TIMESTAMP
+            doc_ref.set(timesheet_data)
+            print(f"✅ Timesheet record created with ID: {doc_ref.id}")
+            return doc_ref.id
+        except Exception as e:
+            print(f"❌ Error creating timesheet: {e}")
+            raise
+    
+    def get_timesheet_by_employee_and_date(self, employee_id: str, date_str: str) -> Optional[Dict[str, Any]]:
+        """Get timesheet record for specific employee and date"""
+        try:
+            timesheet_docs = (self.db.collection('timesheets')
+                            .where('employee_id', '==', employee_id)
+                            .where('date', '==', date_str)
+                            .get())
+            
+            for doc in timesheet_docs:
+                timesheet_data = doc.to_dict()
+                timesheet_data['id'] = doc.id
+                return timesheet_data
+            return None
+        except Exception as e:
+            print(f"❌ Error getting timesheet: {e}")
+            return None
+    
+    def get_timesheets_by_employee(self, employee_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get timesheet records for an employee"""
+        try:
+            print(f"DEBUG: Querying timesheets for employee_id: {employee_id}")
+            timesheet_records = []
+            
+            docs = (self.db.collection('timesheets')
+                   .where('employee_id', '==', employee_id)
+                   .limit(limit)
+                   .get())
+            
+            print(f"DEBUG: Found {len(docs)} timesheet documents")
+            
+            for doc in docs:
+                timesheet_data = doc.to_dict()
+                timesheet_data['id'] = doc.id
+                timesheet_records.append(timesheet_data)
+            
+            # Sort by date in Python
+            if timesheet_records:
+                timesheet_records.sort(key=lambda x: x.get('date', ''), reverse=True)
+            
+            print(f"DEBUG: Returning {len(timesheet_records)} timesheet records")
+            return timesheet_records
+        except Exception as e:
+            print(f"❌ Error getting employee timesheets: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    def get_timesheets_by_date(self, date_str: str) -> List[Dict[str, Any]]:
+        """Get all timesheet records for a specific date"""
+        try:
+            timesheet_records = []
+            docs = self.db.collection('timesheets').where('date', '==', date_str).get()
+            
+            for doc in docs:
+                timesheet_data = doc.to_dict()
+                timesheet_data['id'] = doc.id
+                timesheet_records.append(timesheet_data)
+            
+            return timesheet_records
+        except Exception as e:
+            print(f"❌ Error getting timesheets by date: {e}")
+            return []
+    
+    def get_recent_timesheets(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get recent timesheet records"""
+        try:
+            timesheet_records = []
+            docs = (self.db.collection('timesheets')
+                   .order_by('date', direction=firestore.Query.DESCENDING)
+                   .limit(limit)
+                   .get())
+            
+            for doc in docs:
+                timesheet_data = doc.to_dict()
+                timesheet_data['id'] = doc.id
+                timesheet_records.append(timesheet_data)
+            
+            return timesheet_records
+        except Exception as e:
+            print(f"❌ Error getting recent timesheets: {e}")
+            return []
+    
+    def update_timesheet(self, doc_id: str, update_data: Dict[str, Any]) -> bool:
+        """Update timesheet record"""
+        try:
+            update_data['updated_at'] = firestore.SERVER_TIMESTAMP
+            self.db.collection('timesheets').document(doc_id).update(update_data)
+            print(f"✅ Timesheet {doc_id} updated successfully")
+            return True
+        except Exception as e:
+            print(f"❌ Error updating timesheet: {e}")
+            return False
 
 # Global Firebase service instance
 firebase_service = None

@@ -13,9 +13,18 @@ class Config:
     # Control whether to auto-seed sample admin and employees on startup
     SEED_SAMPLE_DATA = (os.environ.get('SEED_SAMPLE_DATA', 'false').lower() == 'true')
     
-    # Public IP configuration removed (no longer used)
     
-    # Admin Configuration
+    # Timesheet Configuration
+    TIMESHEET_ENABLED = True
+    REQUIRE_TIMESHEET_FOR_SIGNOUT = True  # Require timesheet submission before sign-out
+    TIMESHEET_FIELDS = [
+        {'name': 'tasks_completed', 'label': 'Tasks Completed Today', 'type': 'textarea', 'required': True},
+        {'name': 'challenges_faced', 'label': 'Challenges Faced', 'type': 'textarea', 'required': False},
+        {'name': 'achievements', 'label': 'Key Achievements', 'type': 'textarea', 'required': False},
+        {'name': 'tomorrow_plans', 'label': 'Plans for Tomorrow', 'type': 'textarea', 'required': False},
+        {'name': 'additional_notes', 'label': 'Additional Notes', 'type': 'textarea', 'required': False}
+    ]
+    
     DEFAULT_ADMIN_USERNAME = 'admin'
     DEFAULT_ADMIN_PASSWORD = 'admin123'
     DEFAULT_ADMIN_NAME = 'System Administrator'

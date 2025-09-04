@@ -284,3 +284,95 @@ class FirebaseAttendance:
             'created_at': self.created_at
         }
 
+class FirebaseTimesheet:
+    """Firebase Timesheet model for daily reports"""
+    
+    def __init__(self, timesheet_data: Dict[str, Any]):
+        self.id = timesheet_data.get('id')  # Firestore document ID
+        self.employee_id = timesheet_data.get('employee_id')
+        self.date = timesheet_data.get('date')  # String format: YYYY-MM-DD
+        self.tasks_completed = timesheet_data.get('tasks_completed', '')
+        self.challenges_faced = timesheet_data.get('challenges_faced', '')
+        self.achievements = timesheet_data.get('achievements', '')
+        self.tomorrow_plans = timesheet_data.get('tomorrow_plans', '')
+        self.additional_notes = timesheet_data.get('additional_notes', '')
+        self.submitted_at = timesheet_data.get('submitted_at')
+        self.created_at = timesheet_data.get('created_at')
+        self.updated_at = timesheet_data.get('updated_at')
+    
+    @staticmethod
+    def find_by_employee_and_date(employee_id: str, date: datetime) -> Optional['FirebaseTimesheet']:
+        """Find timesheet by employee and date"""
+        firebase_service = get_firebase_service()
+        date_str = date.strftime('%Y-%m-%d')
+        timesheet_data = firebase_service.get_timesheet_by_employee_and_date(employee_id, date_str)
+        if timesheet_data:
+            return FirebaseTimesheet(timesheet_data)
+        return None
+    
+    @staticmethod
+    def get_by_employee(employee_id: str, limit: int = 50) -> List['FirebaseTimesheet']:
+        """Get timesheet records for an employee"""
+        firebase_service = get_firebase_service()
+        timesheet_data_list = firebase_service.get_timesheets_by_employee(employee_id, limit)
+        return [FirebaseTimesheet(data) for data in timesheet_data_list]
+    
+    @staticmethod
+    def get_by_date(date: datetime) -> List['FirebaseTimesheet']:
+        """Get all timesheet records for a specific date"""
+        firebase_service = get_firebase_service()
+        date_str = date.strftime('%Y-%m-%d')
+        timesheet_data_list = firebase_service.get_timesheets_by_date(date_str)
+        return [FirebaseTimesheet(data) for data in timesheet_data_list]
+    
+    @staticmethod
+    def get_recent(limit: int = 100) -> List['FirebaseTimesheet']:
+        """Get recent timesheet records"""
+        firebase_service = get_firebase_service()
+        timesheet_data_list = firebase_service.get_recent_timesheets(limit)
+        return [FirebaseTimesheet(data) for data in timesheet_data_list]
+    
+    def save(self) -> bool:
+        """Save timesheet to Firebase"""
+        firebase_service = get_firebase_service()
+        
+        timesheet_data = {
+            'employee_id': self.employee_id,
+            'date': self.date,
+            'tasks_completed': self.tasks_completed,
+            'challenges_faced': self.challenges_faced,
+            'achievements': self.achievements,
+            'tomorrow_plans': self.tomorrow_plans,
+            'additional_notes': self.additional_notes,
+            'submitted_at': datetime.now().isoformat()
+        }
+        
+        try:
+            if self.id:
+                # Update existing timesheet
+                return firebase_service.update_timesheet(self.id, timesheet_data)
+            else:
+                # Create new timesheet
+                doc_id = firebase_service.create_timesheet(timesheet_data)
+                self.id = doc_id
+                return True
+        except Exception as e:
+            print(f"❌ Error saving timesheet: {e}")
+            return False
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            'id': self.id,
+            'employee_id': self.employee_id,
+            'date': self.date,
+            'tasks_completed': self.tasks_completed,
+            'challenges_faced': self.challenges_faced,
+            'achievements': self.achievements,
+            'tomorrow_plans': self.tomorrow_plans,
+            'additional_notes': self.additional_notes,
+            'submitted_at': self.submitted_at,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+

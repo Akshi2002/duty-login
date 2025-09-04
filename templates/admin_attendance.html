@@ -8,7 +8,7 @@
         <h2 class="mb-3">
             <i class="fas fa-calendar-check me-2"></i>Attendance Records
         </h2>
-        <p class="text-muted">View and filter attendance records</p>
+                        <p class="text-muted">View and filter attendance records</p>
     </div>
 </div>
 
@@ -18,18 +18,32 @@
         <div class="card">
             <div class="card-body">
                 <form method="GET" class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="date" class="form-label">
                             <i class="fas fa-calendar me-2"></i>Filter by Date
                         </label>
                         <input type="date" class="form-control" id="date" name="date" 
                                value="{{ request.args.get('date', '') }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">
+                            <i class="fas fa-filter me-2"></i>Session Status
+                        </label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Sessions</option>
+                            <option value="incomplete_sessions" {% if status_filter == 'incomplete_sessions' %}selected{% endif %}>
+                                Pending Completion
+                            </option>
+                            <option value="completed_sessions" {% if status_filter == 'completed_sessions' %}selected{% endif %}>
+                                Completed Sessions
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search me-2"></i>Filter
+                                <i class="fas fa-search me-2"></i>Apply Filters
                             </button>
                             <a href="{{ url_for('admin_attendance') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i>Clear
@@ -42,6 +56,8 @@
     </div>
 </div>
 
+
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -49,9 +65,23 @@
                 <h5 class="card-title mb-0">
                     <i class="fas fa-list me-2"></i>Attendance Records
                 </h5>
-                <span class="badge bg-primary">{{ attendance_records|length }} Records</span>
+                <div class="d-flex align-items-center">
+                    {% if status_filter %}
+                        <span class="badge bg-warning me-2">
+                            <i class="fas fa-filter me-1"></i>
+                            {% if status_filter == 'incomplete_sessions' %}
+                                Pending Completion
+                            {% elif status_filter == 'completed_sessions' %}
+                                Completed Sessions
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                    <span class="badge bg-primary">{{ attendance_records|length }} Records</span>
+                </div>
             </div>
             <div class="card-body">
+
+                
                 {% if attendance_records %}
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -123,7 +153,7 @@
                                 <td>
                                     {% if record.sign_in_time and not record.sign_out_time %}
                                         <span class="badge bg-warning">
-                                            <i class="fas fa-clock me-1"></i>Present
+                                            <i class="fas fa-clock me-1"></i>Pending Completion
                                         </span>
                                     {% elif record.sign_out_time %}
                                         <span class="badge bg-success">
@@ -139,6 +169,7 @@
                                         </span>
                                     {% endif %}
                                 </td>
+
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -154,13 +185,13 @@
                                     <i class="fas fa-chart-bar me-2"></i>Summary Statistics
                                 </h6>
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="text-center">
                                             <h5 class="text-primary">{{ attendance_records|length }}</h5>
                                             <small class="text-muted">Total Records</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="text-center">
                                             <h5 class="text-success">
                                                 {{ attendance_records|selectattr('sign_in_time')|list|length }}
@@ -168,7 +199,7 @@
                                             <small class="text-muted">Signed In</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="text-center">
                                             <h5 class="text-danger">
                                                 {{ attendance_records|selectattr('sign_out_time')|list|length }}
@@ -176,7 +207,15 @@
                                             <small class="text-muted">Signed Out</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
+                                        <div class="text-center">
+                                            <h5 class="text-warning">
+                                                {{ attendance_records|selectattr('sign_in_time')|rejectattr('sign_out_time')|list|length }}
+                                            </h5>
+                                            <small class="text-muted">Pending Completion</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
                                         <div class="text-center">
                                             <h5 class="text-info">
                                                 {{ "%.2f"|format(attendance_records|selectattr('total_hours')|map(attribute='total_hours')|sum) }}
@@ -206,4 +245,9 @@
         </div>
     </div>
 </div>
+
+
+
+
+
 {% endblock %} 

@@ -19,7 +19,13 @@ login_manager.init_app(app)
 login_manager.login_view = 'admin_login'
 
 # Initialize Firebase service
-firebase_service = get_firebase_service()
+try:
+    firebase_service = get_firebase_service()
+    print("✅ Firebase service initialized")
+except Exception as e:
+    print(f"⚠️ Firebase service failed to initialize: {e}")
+    print("🔄 App will continue with SQLite fallback")
+    firebase_service = None
 
 
 

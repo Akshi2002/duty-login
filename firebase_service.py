@@ -30,6 +30,7 @@ class FirebaseService:
                     print("✅ Firebase initialized with environment variable")
                 except Exception as e:
                     print(f"❌ Failed to initialize Firebase with environment variable: {e}")
+                    print("⚠️ Continuing without Firebase - app will use SQLite fallback")
                     return
             
             # Option 2: Use service account key file (for local development)
@@ -84,13 +85,20 @@ class FirebaseService:
                         print(f"❌ Simplified setup also failed: {e2}")
                         raise
         
-        # Get Firestore client
-        self.db = firestore.client()
-        print(f"🔥 Connected to Firestore database: duty-login")
+        # Get Firestore client only if Firebase is properly initialized
+        try:
+            self.db = firestore.client()
+            print(f"🔥 Connected to Firestore database: duty-login")
+        except Exception as e:
+            print(f"❌ Failed to connect to Firestore: {e}")
+            print("⚠️ Firebase will not be available - app will use SQLite fallback")
+            self.db = None
     
     # Employee CRUD Operations
     def create_employee(self, employee_data: Dict[str, Any]) -> str:
         """Create a new employee in Firestore"""
+        if not self.db:
+            raise Exception("Firebase not available - use SQLite fallback")
         try:
             doc_ref = self.db.collection('employees').document()
             employee_data['created_at'] = firestore.SERVER_TIMESTAMP

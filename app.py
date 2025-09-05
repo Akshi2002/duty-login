@@ -24,7 +24,7 @@ try:
     print("✅ Firebase service initialized")
 except Exception as e:
     print(f"⚠️ Firebase service failed to initialize: {e}")
-    print("🔄 App will continue with SQLite fallback")
+    print("🔄 App will continue without Firebase")
     firebase_service = None
 
 
